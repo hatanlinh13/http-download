@@ -19,9 +19,11 @@
 #include <stdio.h>
 #include <string.h>
 
-int http_version; /*     10 for HTTP 1.0
-					 and 11 for HTTP 1.1 */
+int http_version; /* 10 for HTTP 1.0
+                     and 11 for HTTP 1.1 */
 int sockfd;       /* socket file descriptor */
+char *prefix;     /* level 1 file/directory name prefix,
+                     empty for sub-directories and files */
 
 int
 main(int argc, char **argv)
@@ -30,6 +32,8 @@ main(int argc, char **argv)
 	char *target_location = (char *)malloc(MAX_STR_LEN);
 	/* current location of the file being downloaded */
 	char *curr_dir        = (char *)malloc(MAX_STR_LEN);
+	prefix                = (char *)malloc(MAX_STR_LEN);
+
 	if (cmd_parser(argc, argv, host_name, target_location) == 0) {
 		fprintf(stderr, "Invalid command line argument!\n");
 		fprintf(stdout, "Usage: exe <http version> <target URL>\n");
@@ -41,7 +45,8 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	strncpy(curr_dir, "./1512284_1512384_1512491/", MAX_STR_LEN);
+	strncpy(curr_dir, "./", MAX_STR_LEN);
+	strncpy(prefix, "1512284_1512387_1512491_", MAX_STR_LEN);
 	get_http_object(host_name, target_location, curr_dir);
 	fprintf(stdout, "Successfully downloaded all files and directories.\n");
 
@@ -49,5 +54,6 @@ main(int argc, char **argv)
 	free(host_name);
 	free(target_location);
 	free(curr_dir);
+	free(prefix);
 	exit(EXIT_SUCCESS);
 }

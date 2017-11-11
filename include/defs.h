@@ -26,5 +26,6 @@
 
 extern int http_version;
 extern int sockfd;
+extern char *prefix;
 
 #endif
