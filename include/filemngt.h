@@ -17,4 +17,21 @@
 #ifndef FILEMNGT_H__
 #define FILEMNGT_H__
 
+/*
+ * Create a file at *curr_dir* with *file_name*
+ * and save *data* to this file
+ *
+ * Return 1 on success
+ * or 0 if failed
+ */
+int save_file(const char *file_name, const char *curr_dir, char *data);
+
+/*
+ * Create a directory *dir_name* at *curr_dir*
+ *
+ * Return 1 on success
+ * or 0 if failed
+ */
+int create_dir(const char *dir_name, const char *curr_dir);
+
 #endif
