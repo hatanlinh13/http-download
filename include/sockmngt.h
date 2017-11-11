@@ -17,6 +17,11 @@
 #ifndef SOCKMNGT_H__
 #define SOCKMNGT_H__
 
+/*
+ * Return a socket file descriptor
+ * for an established connection to *host_name*
+ * return -1 if failed
+ */
 int set_up_socket(char *host_name);
 void tear_down_socket();
 
