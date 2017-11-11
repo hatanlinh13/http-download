@@ -17,6 +17,13 @@
 #ifndef CMD_H__
 #define CMD_H__
 
+/*
+ * Parsing command line arguments
+ * get HTTP version, Host Address and Target Location
+ * from the given arguments
+ * return 0 if failed to parse arguments
+ * otherwise return 1
+ */
 int cmd_parser(int argc, char **argv, char *host_name, char *target_location);
 
 #endif
