@@ -17,4 +17,12 @@
 #ifndef GHOST_H__
 #define GHOST_H__
 
+/*
+ * Get the Host address from the given URL
+ *
+ * Return 1 on success
+ * or 0 if failed
+ */
+int get_host_name(const char *URL, char *host_name);
+
 #endif

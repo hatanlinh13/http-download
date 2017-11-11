@@ -17,4 +17,12 @@
 #ifndef GTARGET_H__
 #define GTARGET_H__
 
+/*
+ * Get the target object location from URL
+ *
+ * Return 1 on success,
+ * or 0 if failed.
+ */
+int get_target(const char *URL, char *target_location);
+
 #endif

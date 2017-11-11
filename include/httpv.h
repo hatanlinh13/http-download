@@ -17,4 +17,12 @@
 #ifndef HTTPV_H__
 #define HTTPV_H__
 
+/*
+ * Set global variable *http_version*.
+ *
+ * Return 1 if successfull set
+ * or return 0 if failed to set (invalid command line argument, etc.)
+ */
+int set_httpv(const char *arg);
+
 #endif
