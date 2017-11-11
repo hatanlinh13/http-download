@@ -10,4 +10,5 @@
  *
  * Implementation: Socket Management;
  */
+#include "sockmngt.h"
 #include "defs.h"

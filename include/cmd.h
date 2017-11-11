@@ -17,4 +17,6 @@
 #ifndef CMD_H__
 #define CMD_H__
 
+int cmd_parser(int argc, char **argv, char *host_name, char *target_location);
+
 #endif

@@ -18,4 +18,6 @@
 #ifndef GOBJECT_H__
 #define GOBJECT_H__
 
+void get_http_object(char *host_name, char *target_location, char *curr_dir);
+
 #endif

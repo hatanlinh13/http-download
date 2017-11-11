@@ -10,6 +10,7 @@
  *
  * Implementation: HTTP Objects;
  */
-#include "defs.h"
+#include "gobject.h"
 #include "htmlp.h"
 #include "filemngt.h"
+#include "defs.h"

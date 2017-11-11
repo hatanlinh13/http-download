@@ -10,4 +10,5 @@
  *
  * Implementation: HTTP Version;
  */
+#include "httpv.h"
 #include "defs.h"

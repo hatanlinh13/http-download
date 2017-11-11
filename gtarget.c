@@ -10,4 +10,5 @@
  *
  * Implementation: Target Location;
  */
+#include "gtarget.h"
 #include "defs.h"

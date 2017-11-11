@@ -10,4 +10,5 @@
  *
  * Implementation: Host Name;
  */
+#include "ghost.h"
 #include "defs.h"

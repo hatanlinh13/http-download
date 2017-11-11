@@ -10,4 +10,5 @@
  *
  * Implementation: HTML Directory Listing;
  */
+#include "htmlp.h"
 #include "defs.h"

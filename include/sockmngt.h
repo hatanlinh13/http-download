@@ -17,4 +17,7 @@
 #ifndef SOCKMNGT_H__
 #define SOCKMNGT_H__
 
+int set_up_socket(char *host_name);
+void tear_down_socket();
+
 #endif

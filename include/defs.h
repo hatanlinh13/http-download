@@ -18,4 +18,13 @@
 #ifndef DEFS_H__
 #define DEFS_H__
 
+#ifndef NULL
+#define NULL 0
+#endif
+
+#define MAX_STR_LEN 255
+
+extern int http_version;
+extern int sockfd;
+
 #endif
