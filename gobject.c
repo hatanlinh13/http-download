@@ -18,7 +18,8 @@
 #include <stdlib.h>
 
 char *create_message(char *host_name, char *target_location);
-int get_data(int sockfd, char *http_message, char **data);
+int   get_data(int sockfd, char *http_message, char **data);
+char *create_name(char *target_location);
 
 void get_http_object(
 		int   sockfd,
@@ -30,16 +31,47 @@ void get_http_object(
 	http_message = create_message(host_name, target_location);
 
 	char *data;
+	char **object_list;
 	if (get_data(sockfd, http_message, &data) == 1) { /* html */
-		//?
+		if (html_parser(data, &object_list) == 1) { /* directory listing */
+			char *dir_name = create_name(target_location);
+
+			create_dir(dir_name, curr_dir);
+			prefix[0] = '\0';
+
+			int i = 0;
+			char *obj = object_list[i];
+			while (obj != NULL) {
+				char *new_target = (char *)malloc(MAX_STR_LEN);
+				char *next_dir   = (char *)malloc(MAX_STR_LEN);
+
+				/* create new target location */
+				/* update next directory */
+
+				get_http_object(sockfd, host_name, new_target, next_dir);
+
+				i++;
+				obj = object_list[i];
+			}
+
+			free(dir_name);
+		}
+		else { /* normal html */
+			char *file_name = create_name(target_location);
+
+			save_file(file_name, curr_dir, data);
+			prefix[0]  = '\0';
+
+			free(file_name);
+		}
 	}
 	else { /* normal file */
-		char *file_name = (char *)malloc(MAX_STR_LEN);
-		/* construct file name from prefix and target_location */
-		//?
+		char *file_name = create_name(target_location);
+
 		save_file(file_name, curr_dir, data);
-		if (prefix[0] != '\0') /* first time save file or create directory */
-			prefix[0]  = '\0';
+		prefix[0]  = '\0';
+
+		free(file_name);
 	}
 
 	free(http_message);
