@@ -30,6 +30,6 @@
  * Otherwise (this file is not a directory listing or cannot parse)
  * return 0.
  */
-int html_parser(char *data, char **object_list);
+int html_parser(char *data, char ***object_list);
 
 #endif
