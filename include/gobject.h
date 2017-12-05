@@ -31,7 +31,7 @@
  *
  * Files and directories name form: *prefix* + name.
  * Remember to reset *prefix* into empty
- * at the end of first call to *get_http_object*
+ * at the end of first call to *save_file* or *create_directory*
  * (Sub directories and files do not have prefix).
  */
 void get_http_object(int sockfd, char *host_name, char *target_location, char *curr_dir);
