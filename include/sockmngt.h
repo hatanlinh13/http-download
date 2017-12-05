@@ -23,6 +23,10 @@
  * return -1 if failed
  */
 int set_up_socket(char *host_name);
-void tear_down_socket();
+/*
+ * Close socket file deswcriptor,
+ * return -1 if failed
+ */
+int tear_down_socket(int sockfd);
 
 #endif

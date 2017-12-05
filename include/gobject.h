@@ -34,6 +34,6 @@
  * at the end of first call to *get_http_object*
  * (Sub directories and files do not have prefix).
  */
-void get_http_object(char *host_name, char *target_location, char *curr_dir);
+void get_http_object(int sockfd, char *host_name, char *target_location, char *curr_dir);
 
 #endif
