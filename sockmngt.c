@@ -30,7 +30,7 @@ int set_up_socket(char *host_name)
 	hints.ai_family   = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
-	if (getaddrinfo(host_name, "80", &hints, &servinfo) == -1)
+	if (getaddrinfo(host_name, "http", &hints, &servinfo) == -1)
 		return -1;
 
 	for (p = servinfo; p != NULL; p = p->ai_next) {
