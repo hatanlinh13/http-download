@@ -63,6 +63,7 @@ int save_file(const char *file_name, const char *curr_dir, char *data, int len_w
 		fclose(fp);
         return 0;
     }
+	free(tmp);
     fclose(fp);
 	return 1;
 }
