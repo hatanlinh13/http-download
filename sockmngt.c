@@ -23,7 +23,6 @@
 
 int set_up_socket(char *host_name)
 {
-	host_name = NULL;
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 
