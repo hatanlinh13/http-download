@@ -35,6 +35,10 @@ char *create_name(char *target_location);
 int   get_data(char *http_message, char **data, char *host_name);
 /* get all HTTP respond header */
 int   get_http_header(char *hdr);
+/* get data using HTTP 1.0 */
+int   get_http10_data(char *http_message, char **data, char *host_name);
+/* get data using HTTP 1.1 */
+int   get_http11_data(char *http_message, char **data, char *host_name);
 
 void get_http_object(char *host_name,
                      char *target_location,
@@ -175,32 +179,10 @@ char *create_message(char *host_name, char *target_location)
 
 int get_data(char *http_message, char **data, char *host_name)
 {
-	http_message = *data;
-	if (10 == http_version) { /* HTTP/1.0 */
-		if ((sockfd = set_up_socket(host_name)) == -1) {
-			fprintf(stderr, "Cannot connect to server.\n");
-			return 0;
-		}
-
-		/* send request */
-
-		/* get respond header */
-		char respond_hdr[MAX_HTTP_HEADER];
-		if (get_http_header(respond_hdr) == 0) {
-			fprintf(stderr, "Cannot get respond header.\n");
-			tear_down_socket();
-			return 0;
-		}
-
-		/* parse header */
-
-		/* get body */
-
-		tear_down_socket();
-	}
-	else { /* HTTP/1.1 */
-	}
-	return 0;
+	if (10 == http_version) /* HTTP/1.0 */
+		return get_http10_data(http_message, data, host_name);
+	else /* HTTP/1.1 */
+		return get_http11_data(http_message, data, host_name);
 }
 
 int get_http_header(char *hdr)
@@ -228,4 +210,112 @@ int get_http_header(char *hdr)
 	}
 
 	return 0;
+}
+
+int get_http10_data(char *http_message, char **data, char *host_name)
+{
+	if ((sockfd = set_up_socket(host_name)) == -1) {
+		fprintf(stderr, "Cannot connect to server.\n");
+		return 0;
+	}
+
+	/* send request */
+	if (send(sockfd, http_message, strlen(http_message), 0) == -1) {
+		fprintf(stderr, "Cannot send HTTP request.\n");
+		tear_down_socket();
+		return 0;
+	}
+
+	/* get respond header */
+	char respond_hdr[MAX_HTTP_HEADER];
+	if (get_http_header(respond_hdr) == 0) {
+		fprintf(stderr, "Cannot get respond header.\n");
+		tear_down_socket();
+		return 0;
+	}
+
+	/* parse header */
+	int status_code = 0;
+	int num_bytes   = 0;
+	int file_type   = 1;
+	sscanf(respond_hdr + 9, "%d", &status_code);
+	if (status_code != 200) {
+		fprintf(stderr, "Invalid status code: %d.\n", status_code);
+		tear_down_socket();
+		return 0;
+	}
+	char *content_type = strstr(respond_hdr, "Content-Type:");
+	content_type += 14; /* shift pointer points to value */
+	if (strncmp(content_type, "text/html", 9) == 0)
+		file_type = 1; /* result is html */
+	else
+		file_type = 2; /* other file type */
+	char *content_len = strstr(respond_hdr, "Content-Length:");
+	content_len += 16; /* shift pointer points to value */
+	sscanf(content_len, "%d", &num_bytes);
+
+	/* get body */
+	*data = (char *)malloc(num_bytes);
+	if (recv(sockfd, *data, num_bytes, 0) < num_bytes) {
+		fprintf(stderr, "Cannot get HTTP respond body.\n");
+		tear_down_socket();
+		return 0;
+	}
+	return file_type;
+
+	tear_down_socket();
+}
+
+int get_http11_data(char *http_message, char **data, char *host_name)
+{
+	if ((sockfd = set_up_socket(host_name)) == -1) {
+		fprintf(stderr, "Cannot connect to server.\n");
+		return 0;
+	}
+
+	/* send request */
+	if (send(sockfd, http_message, strlen(http_message), 0) == -1) {
+		fprintf(stderr, "Cannot send HTTP request.\n");
+		tear_down_socket();
+		return 0;
+	}
+
+	/* get respond header */
+	char respond_hdr[MAX_HTTP_HEADER];
+	if (get_http_header(respond_hdr) == 0) {
+		fprintf(stderr, "Cannot get respond header.\n");
+		tear_down_socket();
+		return 0;
+	}
+
+	/* parse header */
+	int status_code = 0;
+	int num_bytes   = 0;
+	int file_type   = 1;
+	sscanf(respond_hdr + 9, "%d", &status_code);
+	if (status_code != 200) {
+		fprintf(stderr, "Invalid status code: %d.\n", status_code);
+		tear_down_socket();
+		return 0;
+	}
+	char *content_type = strstr(respond_hdr, "Content-Type:");
+	content_type += 14; /* shift pointer points to value */
+	if (strncmp(content_type, "text/html", 9) == 0)
+		file_type = 1; /* result is html */
+	else
+		file_type = 2; /* other file type */
+	char *content_len = strstr(respond_hdr, "Content-Length:");
+	content_len += 16; /* shift pointer points to value */
+	sscanf(content_len, "%d", &num_bytes);
+
+	/* get body */
+	*data = (char *)malloc(num_bytes);
+	if (recv(sockfd, *data, num_bytes, 0) < num_bytes) {
+		fprintf(stderr, "Cannot get HTTP respond body.\n");
+		tear_down_socket();
+		return 0;
+	}
+	return file_type;
+
+	tear_down_socket();
 }
