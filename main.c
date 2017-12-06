@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 
+int file_count;   /* number of files downloaded */
 int http_version; /* 10 for HTTP 1.0
                      and 11 for HTTP 1.1 */
 int sockfd;       /* socket file descriptor */
@@ -47,8 +48,9 @@ main(int argc, char **argv)
 
 	strncpy(curr_dir, "./", 3);
 	strncpy(prefix, "1512284_1512387_1512491_", 25);
+	file_count = 0;
 	get_http_object(host_name, target_location, curr_dir);
-	fprintf(stdout, "Successfully downloaded all files and directories.\n");
+	fprintf(stdout, "Finished operation. Downloaded %d files", file_count);
 
 	if ((http_version == 11) && (tear_down_socket() == -1)) { 
 		fprintf(stderr, "Cannot close connection!\n");

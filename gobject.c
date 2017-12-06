@@ -22,6 +22,8 @@
 
 const char *HTTP_GET = "GET %s HTTP/%s\r\nHost: %s\r\n\r\n";
 
+/* release memory used by object list */
+void  free_objects(char **object_list);
 /* construct HTTP GET message */
 char *create_message(char *host_name, char *target_location);
 /* get data through socket, return 1 -> html, 2 -> regular file, 0 -> error */
@@ -39,11 +41,20 @@ void get_http_object(
 
 	char *data;
 	char **object_list;
-	if (get_data(http_message, &data, host_name) == 1) { /* html */
+	int rd;
+	if ((rd = get_data(http_message, &data, host_name)) == 1) { /* html */
 		if (html_parser(data, &object_list) == 1) { /* directory listing */
 			char *dir_name = create_name(target_location);
 
-			create_dir(dir_name, curr_dir);
+			if (create_dir(dir_name, curr_dir) == 0) {
+				fprintf(stderr, "Cannot create directory %s. ", dir_name);
+				fprintf(stderr, "Skipping this directory.\n");
+				free(http_message);
+				free(data);
+				free_objects(object_list);
+				free(dir_name);
+				return;
+			}
 			prefix[0] = '\0';
 
 			int i = 0;
@@ -76,27 +87,62 @@ void get_http_object(
 			}
 
 			free(dir_name);
+			free_objects(object_list);
 		}
 		else { /* normal html */
 			char *file_name = create_name(target_location);
 
-			save_file(file_name, curr_dir, data);
+			if (save_file(file_name, curr_dir, data) == 0) {
+				fprintf(stderr, "Cannot save %s to disk. ", file_name);
+				fprintf(stderr, "Skipping this file.\n");
+				free(http_message);
+				free(data);
+				free(file_name);
+				return;
+			}
 			prefix[0]  = '\0';
+			file_count += 1;
 
 			free(file_name);
 		}
 	}
-	else { /* normal file */
+	else if (rd == 2) { /* normal file */
 		char *file_name = create_name(target_location);
 
-		save_file(file_name, curr_dir, data);
+		if (save_file(file_name, curr_dir, data) == 0) {
+			fprintf(stderr, "Cannot save %s to disk. ", file_name);
+			fprintf(stderr, "Skipping this file.\n");
+			free(http_message);
+			free(data);
+			free(file_name);
+			return;
+		}
 		prefix[0]  = '\0';
+		file_count += 1;
 
 		free(file_name);
+	}
+	else { /* Error getting data */
+		fprintf(stderr, "Cannot get data for target: %s. ", target_location);
+		fprintf(stderr, "Skipping!\n");
 	}
 
 	free(http_message);
 	free(data);
+}
+
+void free_objects(char **object_list)
+{
+	char *p;
+	int i = 0;
+	p = object_list[i];
+	while (p != NULL) {
+		free(p);
+		i++;
+		p = object_list[i];
+	}
+	free(p); /* last null element */
+	free(object_list);
 }
 
 char *create_name(char *target_location)
@@ -106,7 +152,8 @@ char *create_name(char *target_location)
 	char *anchor = strrchr(target_location, '/');
 	/* start copy from the next character */
 	anchor += 1;
-	strncpy(name, anchor, MAX_STR_LEN);
+	strncpy(name, prefix, strlen(prefix) + 1);
+	strncat(name, anchor, strlen(anchor));
 	return name;
 }
 
@@ -126,7 +173,10 @@ int get_data(char *http_message, char **data, char *host_name)
 {
 	http_message = *data;
 	if (10 == http_version) { /* HTTP/1.0 */
-		set_up_socket(host_name);
+		if ((sockfd = set_up_socket(host_name)) == -1) {
+			fprintf(stderr, "Cannot connect to server.\n");
+			return 0;
+		}
 
 		tear_down_socket();
 	}

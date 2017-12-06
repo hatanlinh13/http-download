@@ -24,6 +24,7 @@
 
 #define MAX_STR_LEN 255
 
+extern int file_count;
 extern int http_version;
 extern int sockfd;
 extern char *prefix;
