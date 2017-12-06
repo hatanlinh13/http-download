@@ -27,6 +27,6 @@ int set_up_socket(char *host_name);
  * Close socket file deswcriptor,
  * return -1 if failed
  */
-int tear_down_socket(int sockfd);
+int tear_down_socket();
 
 #endif

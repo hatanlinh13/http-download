@@ -57,7 +57,7 @@ int set_up_socket(char *host_name)
 	}
 }
 
-int tear_down_socket(int sockfd)
+int tear_down_socket()
 {
 	return close(sockfd);
 }

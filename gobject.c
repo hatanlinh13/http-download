@@ -13,6 +13,7 @@
 #include "gobject.h"
 #include "htmlp.h"
 #include "filemngt.h"
+#include "sockmngt.h"
 #include "defs.h"
 
 #include <stdlib.h>
@@ -24,7 +25,7 @@ const char *HTTP_GET = "GET %s HTTP/%s\r\nHost: %s\r\n\r\n";
 /* construct HTTP GET message */
 char *create_message(char *host_name, char *target_location);
 /* get data through socket, return 1 -> html, 2 -> regular file, 0 -> error */
-int   get_data(char *http_message, char **data);
+int   get_data(char *http_message, char **data, char *host_name);
 /* extract file name from location */
 char *create_name(char *target_location);
 
@@ -38,7 +39,7 @@ void get_http_object(
 
 	char *data;
 	char **object_list;
-	if (get_data(http_message, &data) == 1) { /* html */
+	if (get_data(http_message, &data, host_name) == 1) { /* html */
 		if (html_parser(data, &object_list) == 1) { /* directory listing */
 			char *dir_name = create_name(target_location);
 
@@ -121,10 +122,13 @@ char *create_message(char *host_name, char *target_location)
 	return message;
 }
 
-int get_data(char *http_message, char **data)
+int get_data(char *http_message, char **data, char *host_name)
 {
 	http_message = *data;
 	if (10 == http_version) { /* HTTP/1.0 */
+		set_up_socket(host_name);
+
+		tear_down_socket();
 	}
 	else { /* HTTP/1.1 */
 	}

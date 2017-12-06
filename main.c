@@ -50,7 +50,7 @@ main(int argc, char **argv)
 	get_http_object(host_name, target_location, curr_dir);
 	fprintf(stdout, "Successfully downloaded all files and directories.\n");
 
-	if ((http_version == 11) && (tear_down_socket(sockfd) == -1)) { 
+	if ((http_version == 11) && (tear_down_socket() == -1)) { 
 		fprintf(stderr, "Cannot close connection!\n");
 		exit(EXIT_FAILURE);
 	}
