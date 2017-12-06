@@ -20,6 +20,7 @@ LFLAGS =
 all: main.o \
 	cmd.o httpv.o ghost.o gtarget.o \
 	gobject.o sockmngt.o htmlp.o filemngt.o
+	mkdir bin
 	$(LD) $(LFLAGS) \
 		$(BINDIR)main.o $(BINDIR)cmd.o \
 		$(BINDIR)httpv.o $(BINDIR)ghost.o $(BINDIR)gtarget.o \
@@ -57,4 +58,4 @@ main.o: main.c $(INCDIR)defs.h $(INCDIR)cmd.h $(INCDIR)gobject.h $(INCDIR)sockmn
 	$(CC) $(CFLAGS) -c main.c $(BINDIR)main.o
 
 clean:
-	rm ./bin/* 1512284_1512387_1512491
+	rm -r ./bin 1512284_1512387_1512491
