@@ -21,7 +21,6 @@
 
 int set_up_socket(char *host_name)
 {
-	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 
 	memset(&hints, 0, sizeof hints);
