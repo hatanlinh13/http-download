@@ -19,22 +19,26 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 
+#define MAX_HTTP_HEADER 4096
 const char *HTTP_GET = "GET %s HTTP/%s\r\nHost: %s\r\n\r\n";
 
 /* release memory used by object list */
 void  free_objects(char **object_list);
 /* construct HTTP GET message */
 char *create_message(char *host_name, char *target_location);
-/* get data through socket, return 1 -> html, 2 -> regular file, 0 -> error */
-int   get_data(char *http_message, char **data, char *host_name);
 /* extract file name from location */
 char *create_name(char *target_location);
+/* get data through socket, return 1 -> html, 2 -> regular file, 0 -> error */
+int   get_data(char *http_message, char **data, char *host_name);
+/* get all HTTP respond header */
+int   get_http_header(char *hdr);
 
-void get_http_object(
-		char *host_name,
-		char *target_location,
-		char *curr_dir)
+void get_http_object(char *host_name,
+                     char *target_location,
+                     char *curr_dir)
 {
 	char *http_message;
 	http_message = create_message(host_name, target_location);
@@ -178,9 +182,50 @@ int get_data(char *http_message, char **data, char *host_name)
 			return 0;
 		}
 
+		/* send request */
+
+		/* get respond header */
+		char respond_hdr[MAX_HTTP_HEADER];
+		if (get_http_header(respond_hdr) == 0) {
+			fprintf(stderr, "Cannot get respond header.\n");
+			tear_down_socket();
+			return 0;
+		}
+
+		/* parse header */
+
+		/* get body */
+
 		tear_down_socket();
 	}
 	else { /* HTTP/1.1 */
 	}
+	return 0;
+}
+
+int get_http_header(char *hdr)
+{
+	char c1 = '\0';
+	char c2 = '\0';
+	char c3 = '\0';
+	char c4 = '\0';
+	int i;
+
+	i = 0;
+	while (recv(sockfd, hdr + i, 1, 0) == 1) {
+		c1 = c2;
+		c2 = c3;
+		c3 = c4;
+		c4 = hdr[i];
+
+		if (c1 == '\r' &&
+		    c2 == '\n' &&
+		    c3 == '\r' &&
+		    c4 == '\n')
+			return 1;
+
+		i++;
+	}
+
 	return 0;
 }
