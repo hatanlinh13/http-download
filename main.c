@@ -45,8 +45,8 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	strncpy(curr_dir, "./", MAX_STR_LEN);
-	strncpy(prefix, "1512284_1512387_1512491_", MAX_STR_LEN);
+	strncpy(curr_dir, "./", 3);
+	strncpy(prefix, "1512284_1512387_1512491_", 25);
 	get_http_object(sockfd, host_name, target_location, curr_dir);
 	fprintf(stdout, "Successfully downloaded all files and directories.\n");
 
