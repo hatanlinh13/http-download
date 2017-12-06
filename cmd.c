@@ -86,10 +86,10 @@ int cmd_parser(int argc, char **argv, char**host_name, char**target_location){
     }
     else if (argc == 3){
 		if (strncmp(argv[1], "--http1.", 8) == 0) {
-			if (strncmp(argv[1], "http1.0", 9) == 0) {
+			if (strncmp(argv[1], "--http1.0", 9) == 0) {
 				http_version = 10;
 			}
-			else if (strncat(argv[1], "http1.1", 9) == 0) {
+			else if (strncmp(argv[1], "--http1.1", 9) == 0) {
 				http_version = 11;
 			}
 			else {
@@ -98,10 +98,10 @@ int cmd_parser(int argc, char **argv, char**host_name, char**target_location){
 			return parseURL(argv[2], host_name, target_location);
 		}
 		else if (strncmp(argv[2], "--http1.", 8) == 0) {
-			if (strncmp(argv[2], "http1.0", 9) == 0) {
+			if (strncmp(argv[2], "--http1.0", 9) == 0) {
 				http_version = 10;
 			}
-			else if (strncat(argv[2], "http1.1", 9) == 0) {
+			else if (strncmp(argv[2], "--http1.1", 9) == 0) {
 				http_version = 11;
 			}
 			else {
