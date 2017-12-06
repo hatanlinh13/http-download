@@ -339,7 +339,7 @@ int get_http11_data(char *http_message, char **data, char *host_name)
 
 		*data = (char *)malloc(1);
 		int data_size = 0;
-		while (true) {
+		while (1) {
 			chunk_indicator = get_line_data();
 			if (chunk_indicator == NULL) {
 				fprintf(stderr, "Cannot get chunk.\n");
@@ -396,7 +396,7 @@ char *get_line_data()
 	char c1 = '\0';
 	char c2 = '\0';
 	int num_read = 0;
-	while (true) {
+	while (1) {
 		if (num_read == allocated) /* buffer full */
 			line = (char *)realloc(line, allocated + BUF_SIZE);
 
