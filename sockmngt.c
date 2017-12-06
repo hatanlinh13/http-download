@@ -19,14 +19,12 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-#define PORT 80
-
 int set_up_socket(char *host_name)
 {
 	int sockfd;
 	struct addrinfo hints, *servinfo, *p;
 
-	memset(&hints, 0, sizeof(hints));
+	memset(&hints, 0, sizeof hints);
 	hints.ai_family   = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
 
