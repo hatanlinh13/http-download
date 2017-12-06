@@ -14,7 +14,7 @@ INCDIR = ./include/
 BINDIR = ./bin/
 INCOPT = -I./include
 CFLAGS = $(INCOPT)
-LFLAGS =
+LFLAGS = -g
 
 cmd.o: cmd.c $(INCDIR)cmd.h $(INCDIR)defs.h
 	$(CC) $(CFLAGS) -c cmd.c -o $(BINDIR)cmd.o
@@ -39,11 +39,7 @@ main.o: main.c $(INCDIR)defs.h $(INCDIR)cmd.h $(INCDIR)gobject.h $(INCDIR)sockmn
 all: makebindir main.o \
 	cmd.o \
 	gobject.o sockmngt.o htmlp.o filemngt.o
-	$(CC) $(LFLAGS) \
-		$(BINDIR)main.o $(BINDIR)cmd.o \
-		$(BINDIR)gobject.o $(BINDIR)sockmngt.o \
-		$(BINDIR)htmlp.o $(BINDIR)filemngt.o \
-		-o 1512284_1512387_1512491
+	$(CC) $(LFLAGS) $(BINDIR)main.o $(BINDIR)cmd.o $(BINDIR)gobject.o $(BINDIR)sockmngt.o $(BINDIR)htmlp.o $(BINDIR)filemngt.o	-o 1512284_1512387_1512491
 
 makebindir:
 	mkdir -p bin
