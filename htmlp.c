@@ -34,12 +34,17 @@ int html_parser(char *data, char ***object_list){
 	char* tmp = data;
 	char* p = NULL;
 
-	p = strstr(tmp, "href=\"");
+	p = strstr(tmp, "<title>Index of");
 	if (p == NULL)
 		return 0;
 
-	p += 6;
+	p = data;
 	tmp = p;
+	while ((p = strstr(p, "href=\""))) {
+		p += 6;
+		if (p[0] != '?')
+			break;
+	}
 	int cnt = 0;
 	while ((p = strstr(p, "href=\""))){
 		++cnt;
@@ -48,11 +53,15 @@ int html_parser(char *data, char ***object_list){
 	*object_list = (char**)calloc(cnt + 1, sizeof(char*));
 
 	p = tmp;
+	while ((p = strstr(p, "href=\""))) {
+		p += 6;
+		if (p[0] != '?')
+			break;
+	}
 	cnt = 0;
 	while ((p = strstr(p, "href=\""))){
 		p += 6;
 		(*object_list)[cnt++] = copyStr(p);
-		puts((*object_list)[cnt - 1]);
 	}
 	(*object_list)[cnt] = NULL;
 

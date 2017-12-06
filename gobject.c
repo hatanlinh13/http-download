@@ -22,7 +22,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
-#define BUF_SIZE        4096
+#define BUF_SIZE        1000000
 #define MAX_HTTP_HEADER 4096
 const char *HTTP_GET = "GET %s HTTP/%s\r\nHost: %s\r\n\r\n";
 
@@ -33,11 +33,11 @@ char *create_message(char *host_name, char *target_location);
 /* extract file name from location */
 char *create_name(char *target_location);
 /* get data through socket, return 1 -> html, 2 -> regular file, 0 -> error */
-int   get_data(char *http_message, char **data, char *host_name);
+int   get_data(char *http_message, char **data, char *host_name, int *len_read);
 /* get data using HTTP 1.0 */
-int   get_http10_data(char *http_message, char **data, char *host_name);
+int   get_http10_data(char *http_message, char **data, char *host_name, int *len_read);
 /* get data using HTTP 1.1 */
-int   get_http11_data(char *http_message, char **data, char *host_name);
+int   get_http11_data(char *http_message, char **data, char *host_name, int *len_read);
 /* get all HTTP respond header */
 int   get_http_header(char *hdr);
 /* get data until \r\n
@@ -53,11 +53,12 @@ void get_http_object(char *host_name,
 	char *http_message;
 	http_message = create_message(host_name, target_location);
 
-	char *data;
-	char **object_list;
+	int len_read;
+	char *data = NULL;
+	char **object_list = NULL;
 	int rd;
 	fprintf(stdout, "Getting target %s...\n", target_location);
-	if ((rd = get_data(http_message, &data, host_name)) == 1) { /* html */
+	if ((rd = get_data(http_message, &data, host_name, &len_read)) == 1) { /* html */
 		fprintf(stdout, "----Successfully received target.\n");
 		if (html_parser(data, &object_list) == 1) { /* directory listing */
 			char *dir_name = create_name(target_location);
@@ -88,12 +89,11 @@ void get_http_object(char *host_name,
 					strncpy(new_target,
 							target_location,
 							strlen(target_location) + 1);
-					strncat(new_target, obj, strlen(target_location));
+					strncat(new_target, obj, strlen(obj));
 				}
 				/* update next directory */
 				strncpy(next_dir, curr_dir, strlen(curr_dir) + 1);
 				strncat(next_dir, dir_name, strlen(dir_name));
-				strncat(next_dir, "/", 1);
 
 				get_http_object(host_name, new_target, next_dir);
 
@@ -109,7 +109,7 @@ void get_http_object(char *host_name,
 		else { /* normal html */
 			char *file_name = create_name(target_location);
 
-			if (save_file(file_name, curr_dir, data) == 0) {
+			if (save_file(file_name, curr_dir, data, len_read) == 0) {
 				fprintf(stdout, "----Cannot save %s to disk. ", file_name);
 				fprintf(stdout, "Skipping this file.\n");
 				free(http_message);
@@ -127,7 +127,7 @@ void get_http_object(char *host_name,
 	else if (rd == 2) { /* normal file */
 		char *file_name = create_name(target_location);
 
-		if (save_file(file_name, curr_dir, data) == 0) {
+		if (save_file(file_name, curr_dir, data, len_read) == 0) {
 			fprintf(stdout, "----Cannot save %s to disk. ", file_name);
 			fprintf(stdout, "Skipping this file.\n");
 			free(http_message);
@@ -147,12 +147,15 @@ void get_http_object(char *host_name,
 	}
 
 	free(http_message);
-	free(data);
+	if (data)
+		free(data);
 }
 
 
 void free_objects(char **object_list)
 {
+	if (object_list == NULL)
+		return;
 	char *p;
 	int i = 0;
 	p = object_list[i];
@@ -170,6 +173,13 @@ char *create_name(char *target_location)
 	char *name = (char *)malloc(MAX_STR_LEN);
 	/* find last occurrence of / in target location */
 	char *anchor = strrchr(target_location, '/');
+	int len = strlen(target_location);
+	if (target_location[len - 1] == '/') { /* last char */
+		target_location[len - 1] = '\0';
+		anchor = strrchr(target_location, '/');
+		target_location[len - 1] = '/';
+	}
+
 	/* start copy from the next character */
 	anchor += 1;
 	strncpy(name, prefix, strlen(prefix) + 1);
@@ -189,12 +199,12 @@ char *create_message(char *host_name, char *target_location)
 	return message;
 }
 
-int get_data(char *http_message, char **data, char *host_name)
+int get_data(char *http_message, char **data, char *host_name, int *len_read)
 {
 	if (10 == http_version) /* HTTP/1.0 */
-		return get_http10_data(http_message, data, host_name);
+		return get_http10_data(http_message, data, host_name, len_read);
 	else /* HTTP/1.1 */
-		return get_http11_data(http_message, data, host_name);
+		return get_http11_data(http_message, data, host_name, len_read);
 }
 
 int get_http_header(char *hdr)
@@ -224,16 +234,16 @@ int get_http_header(char *hdr)
 	return 0;
 }
 
-int get_http10_data(char *http_message, char **data, char *host_name)
+int get_http10_data(char *http_message, char **data, char *host_name, int *len_read)
 {
 	if ((sockfd = set_up_socket(host_name)) == -1) {
-		fprintf(stderr, "Cannot connect to server.\n");
+		fprintf(stderr, "~~~~Cannot connect to server.\n");
 		return 0;
 	}
 
 	/* send request */
 	if (send(sockfd, http_message, strlen(http_message), 0) == -1) {
-		fprintf(stderr, "Cannot send HTTP request.\n");
+		fprintf(stderr, "~~~~Cannot send HTTP request.\n");
 		tear_down_socket();
 		return 0;
 	}
@@ -241,7 +251,7 @@ int get_http10_data(char *http_message, char **data, char *host_name)
 	/* get respond header */
 	char respond_hdr[MAX_HTTP_HEADER];
 	if (get_http_header(respond_hdr) == 0) {
-		fprintf(stderr, "Cannot get respond header.\n");
+		fprintf(stderr, "~~~~Cannot get respond header.\n");
 		tear_down_socket();
 		return 0;
 	}
@@ -252,7 +262,7 @@ int get_http10_data(char *http_message, char **data, char *host_name)
 	int file_type   = 0;
 	sscanf(respond_hdr + 9, "%d", &status_code);
 	if (status_code != 200) {
-		fprintf(stderr, "Invalid status code: %d.\n", status_code);
+		fprintf(stderr, "~~~~Invalid status code: %d.\n", status_code);
 		tear_down_socket();
 		return 0;
 	}
@@ -263,35 +273,57 @@ int get_http10_data(char *http_message, char **data, char *host_name)
 	else
 		file_type = 2; /* other file type */
 	char *content_len = strstr(respond_hdr, "Content-Length:");
-	content_len += 16; /* shift pointer points to value */
-	sscanf(content_len, "%d", &num_bytes);
+	if (content_len != NULL) {
+		content_len += 16; /* shift pointer points to value */
+		sscanf(content_len, "%d", &num_bytes);
+	}
 
 	/* get body */
-	*data = (char *)malloc(num_bytes);
-	int total_read = 0;
-	int num_read;
-	while ((num_read = recv(sockfd, *data, num_bytes, 0)) != -1)
-		total_read += num_read;
-	if (total_read != num_bytes) {
-		fprintf(stderr, "Cannot get HTTP respond body.\n");
-		tear_down_socket();
-		return 0;
+	if (content_len != NULL) { /* had content length specified */
+		*data = (char *)malloc(num_bytes);
+		int total_read = 0;
+		int num_read;
+		while ((num_read = recv(sockfd, *data, num_bytes, 0)) > 0)
+			total_read += num_read;
+		if (total_read != num_bytes) {
+			fprintf(stderr, "~~~~Cannot get HTTP respond body.\n");
+			tear_down_socket();
+			return 0;
+		}
+		*len_read = total_read;
+	}
+	else { /* no content length, read until connection closed */
+		*data = (char *)malloc(BUF_SIZE);
+		int allocated = BUF_SIZE;
+		int num_read = 0;
+		while (1) {
+			if (num_read + 100000 >= allocated) { /* buffer full */
+				*data = (char *)realloc(*data, allocated + BUF_SIZE);
+				allocated += BUF_SIZE;
+			}
+
+			int rd = recv(sockfd, *data + num_read, 100000, 0);
+			num_read += rd;
+			if (rd <= 0)
+				break;
+		}
+		*len_read = num_read;
 	}
 
 	tear_down_socket();
 	return file_type;
 }
 
-int get_http11_data(char *http_message, char **data, char *host_name)
+int get_http11_data(char *http_message, char **data, char *host_name, int *len_read)
 {
 	if ((sockfd = set_up_socket(host_name)) == -1) {
-		fprintf(stderr, "Cannot connect to server.\n");
+		fprintf(stderr, "~~~~Cannot connect to server.\n");
 		return 0;
 	}
 
 	/* send request */
 	if (send(sockfd, http_message, strlen(http_message), 0) == -1) {
-		fprintf(stderr, "Cannot send HTTP request.\n");
+		fprintf(stderr, "~~~~Cannot send HTTP request.\n");
 		tear_down_socket();
 		return 0;
 	}
@@ -299,7 +331,7 @@ int get_http11_data(char *http_message, char **data, char *host_name)
 	/* get respond header */
 	char respond_hdr[MAX_HTTP_HEADER];
 	if (get_http_header(respond_hdr) == 0) {
-		fprintf(stderr, "Cannot get respond header.\n");
+		fprintf(stderr, "~~~~Cannot get respond header.\n");
 		tear_down_socket();
 		return 0;
 	}
@@ -310,7 +342,7 @@ int get_http11_data(char *http_message, char **data, char *host_name)
 	int file_type   = 1;
 	sscanf(respond_hdr + 9, "%d", &status_code);
 	if (status_code != 200) {
-		fprintf(stderr, "Invalid status code: %d.\n", status_code);
+		fprintf(stderr, "~~~~Invalid status code: %d.\n", status_code);
 		tear_down_socket();
 		return 0;
 	}
@@ -342,7 +374,7 @@ int get_http11_data(char *http_message, char **data, char *host_name)
 		while (1) {
 			chunk_indicator = get_line_data();
 			if (chunk_indicator == NULL) {
-				fprintf(stderr, "Cannot get chunk.\n");
+				fprintf(stderr, "~~~~Cannot get chunk.\n");
 				tear_down_socket();
 				return 0;
 			}
@@ -351,7 +383,7 @@ int get_http11_data(char *http_message, char **data, char *host_name)
 			if (chunk_size > 0) {
 				chunk_buffer = get_line_data();
 				if (chunk_buffer == NULL) {
-					fprintf(stderr, "Cannot get chunk buffer.\n");
+					fprintf(stderr, "~~~~Cannot get chunk buffer.\n");
 					free(chunk_indicator);
 					tear_down_socket();
 					return 0;
@@ -365,6 +397,7 @@ int get_http11_data(char *http_message, char **data, char *host_name)
 			else { /* end of respond */
 				free(chunk_indicator);
 				tear_down_socket();
+				*len_read = data_size;
 				return file_type;
 			}
 		}
@@ -374,13 +407,14 @@ int get_http11_data(char *http_message, char **data, char *host_name)
 		*data = (char *)malloc(num_bytes);
 		int total_read = 0;
 		int num_read;
-		while ((num_read = recv(sockfd, *data, num_bytes, 0)) != -1)
+		while ((num_read = recv(sockfd, *data, num_bytes, 0)) > 0)
 			total_read += num_read;
 		if (total_read != num_bytes) {
-			fprintf(stderr, "Cannot get HTTP respond body.\n");
+			fprintf(stderr, "~~~~Cannot get HTTP respond body.\n");
 			tear_down_socket();
 			return 0;
 		}
+		*len_read = total_read;
 	}
 
 	tear_down_socket();
@@ -389,16 +423,17 @@ int get_http11_data(char *http_message, char **data, char *host_name)
 
 char *get_line_data()
 {
-	int allocated = 0;
+	int allocated = BUF_SIZE;
 	char *line = (char *)malloc(BUF_SIZE);
-	allocated += BUF_SIZE;
 
 	char c1 = '\0';
 	char c2 = '\0';
 	int num_read = 0;
 	while (1) {
-		if (num_read == allocated) /* buffer full */
+		if (num_read == allocated) { /* buffer full */
 			line = (char *)realloc(line, allocated + BUF_SIZE);
+			allocated += BUF_SIZE;
+		}
 
 		if (recv(sockfd, line + num_read, 1, 0) == -1)
 			return NULL;

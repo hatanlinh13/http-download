@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*
 int findSubstr(char * pat, char * text){
 	for(int i=0; pat[i] != '\0';++i){
 		if(pat[i] == text[0]){
@@ -76,6 +77,41 @@ int parseURL(char* arg, char**host_name, char**target_location){
 	strcpy(*target_location, arg + end_host);
 	(*target_location)[tg_len] = '\0';
 	//printf("target: %s\n", target_location);
+	return 1;
+}
+*/
+
+int parseURL(char *arg, char **host_name, char **target_location)
+{
+	*host_name       = (char *)malloc(MAX_STR_LEN);
+	*target_location = (char *)malloc(MAX_STR_LEN);
+
+	if (strlen(arg) == 0)
+		return 0;
+
+	char *ihost = strstr(arg, "://");
+	if (ihost == NULL)
+		ihost = arg;
+	else
+		ihost += 3;
+	char *itrgt = strchr(ihost, '/');
+	int host_len;
+	if (itrgt == NULL) {
+		itrgt = arg + strlen(arg);
+		host_len = itrgt - ihost;
+		strncpy(*target_location, "/", 1);
+		(*target_location)[1] = '\0';
+		strncpy(*host_name, arg, host_len);
+		(*host_name)[host_len] = '\0';
+		return 1;
+	}
+
+	host_len = itrgt - ihost;
+	strncpy(*host_name, ihost, host_len);
+	(*host_name)[host_len] = '\0';
+	int targ_len = (arg + strlen(arg)) - itrgt;
+	strncpy(*target_location, itrgt, targ_len);
+	(*target_location)[targ_len] = '\0';
 	return 1;
 }
 

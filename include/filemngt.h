@@ -24,7 +24,7 @@
  * Return 1 on success
  * or 0 if failed
  */
-int save_file(const char *file_name, const char *curr_dir, char *data);
+int save_file(const char *file_name, const char *curr_dir, char *data, int len_write);
 
 /*
  * Create a directory *dir_name* at *curr_dir*

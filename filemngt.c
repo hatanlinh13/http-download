@@ -37,7 +37,7 @@ int create_dir(const char *dir_name, const char *curr_dir){
 }
 
 struct stat f;// = {0};
-int save_file(const char *file_name, const char *curr_dir, char *data){
+int save_file(const char *file_name, const char *curr_dir, char *data, int len_write) {
 /* no need, curr_dir existence is guaranteed
     if (stat(curr_dir, &f) == -1) {
         mkdir(curr_dir, 0777);
@@ -51,16 +51,18 @@ int save_file(const char *file_name, const char *curr_dir, char *data){
     tmp[cdl+dl] = '\0';
 //	printf("%s\n", tmp);
     FILE *fp;
-    fp = fopen(tmp, "w");
+    fp = fopen(tmp, "wb");
     if (fp == NULL){
         printf("Cannot open file\n");
         return 0;
     }
-    int result = fputs(data, fp);
-    if (result == EOF){
+    //int result = fputs(data, fp);
+	int result = fwrite(data, sizeof(char), len_write, fp);
+    if (result != len_write){
         printf("Writing file failed!!!\n");
+		fclose(fp);
         return 0;
     }
-	return 1;
     fclose(fp);
+	return 1;
 }
