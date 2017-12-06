@@ -11,9 +11,6 @@
  * Implementation: Command Line Arguments;
  */
 #include "cmd.h"
-#include "httpv.h"
-#include "ghost.h"
-#include "gtarget.h"
 #include "defs.h"
 
 #include <stdlib.h>

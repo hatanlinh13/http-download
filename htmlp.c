@@ -12,9 +12,10 @@
  */
 #include "htmlp.h"
 #include "defs.h"
-#include "string.h"
-#include "stdio.h"
-#include "stdlib.h"
+
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 char* copyStr(char* p){
 	char tmp[256];
