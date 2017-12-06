@@ -81,6 +81,7 @@ int parseURL(char* arg, char**host_name, char**target_location){
 
 int cmd_parser(int argc, char **argv, char**host_name, char**target_location){
     if(argc == 2){
+		http_version = 10;
         return parseURL(argv[1], host_name, target_location);
     }
     else if (argc == 3){
