@@ -237,7 +237,7 @@ int get_http10_data(char *http_message, char **data, char *host_name)
 	/* parse header */
 	int status_code = 0;
 	int num_bytes   = 0;
-	int file_type   = 1;
+	int file_type   = 0;
 	sscanf(respond_hdr + 9, "%d", &status_code);
 	if (status_code != 200) {
 		fprintf(stderr, "Invalid status code: %d.\n", status_code);
@@ -256,14 +256,18 @@ int get_http10_data(char *http_message, char **data, char *host_name)
 
 	/* get body */
 	*data = (char *)malloc(num_bytes);
-	if (recv(sockfd, *data, num_bytes, 0) < num_bytes) {
+	int total_read = 0;
+	int num_read;
+	while ((num_read = recv(sockfd, *data, num_bytes, 0)) != -1)
+		total_read += num_read;
+	if (total_read != num_bytes) {
 		fprintf(stderr, "Cannot get HTTP respond body.\n");
 		tear_down_socket();
 		return 0;
 	}
-	return file_type;
 
 	tear_down_socket();
+	return file_type;
 }
 
 int get_http11_data(char *http_message, char **data, char *host_name)
@@ -310,12 +314,16 @@ int get_http11_data(char *http_message, char **data, char *host_name)
 
 	/* get body */
 	*data = (char *)malloc(num_bytes);
-	if (recv(sockfd, *data, num_bytes, 0) < num_bytes) {
+	int total_read = 0;
+	int num_read;
+	while ((num_read = recv(sockfd, *data, num_bytes, 0)) != -1)
+		total_read += num_read;
+	if (total_read != num_bytes) {
 		fprintf(stderr, "Cannot get HTTP respond body.\n");
 		tear_down_socket();
 		return 0;
 	}
-	return file_type;
 
 	tear_down_socket();
+	return file_type;
 }

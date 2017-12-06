@@ -41,21 +41,12 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	if ((http_version == 11) && ((sockfd = set_up_socket(host_name)) == -1)) {
-		fprintf(stderr, "Cannot establish a connection to target!\n");
-		exit(EXIT_FAILURE);
-	}
-
 	strncpy(curr_dir, "./", 3);
 	strncpy(prefix, "1512284_1512387_1512491_", 25);
 	file_count = 0;
 	get_http_object(host_name, target_location, curr_dir);
-	fprintf(stdout, "Finished operation. Downloaded %d files", file_count);
+	fprintf(stdout, "Finished operation. Downloaded %d files.\n", file_count);
 
-	if ((http_version == 11) && (tear_down_socket() == -1)) { 
-		fprintf(stderr, "Cannot close connection!\n");
-		exit(EXIT_FAILURE);
-	}
 	free(host_name);
 	free(target_location);
 	free(curr_dir);
