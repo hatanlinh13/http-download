@@ -10,7 +10,6 @@
 # Module: Makefile
 
 CC     = gcc
-LD     = ld
 INCDIR = ./include/
 BINDIR = ./bin/
 INCOPT = -I./include
@@ -40,7 +39,7 @@ main.o: main.c $(INCDIR)defs.h $(INCDIR)cmd.h $(INCDIR)gobject.h $(INCDIR)sockmn
 all: makebindir main.o \
 	cmd.o \
 	gobject.o sockmngt.o htmlp.o filemngt.o
-	$(LD) $(LFLAGS) \
+	$(CC) $(LFLAGS) \
 		$(BINDIR)main.o $(BINDIR)cmd.o \
 		$(BINDIR)gobject.o $(BINDIR)sockmngt.o \
 		$(BINDIR)htmlp.o $(BINDIR)filemngt.o \
