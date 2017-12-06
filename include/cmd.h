@@ -24,6 +24,6 @@
  * return 0 if failed to parse arguments
  * otherwise return 1
  */
-int cmd_parser(int argc, char **argv, char *host_name, char *target_location);
+int cmd_parser(int argc, char **argv, char **host_name, char **target_location);
 
 #endif

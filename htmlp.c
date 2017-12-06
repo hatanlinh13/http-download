@@ -40,7 +40,7 @@ int html_parser(char *data, char ***object_list){
 	p += 6;
 	tmp = p;
 	int cnt = 0;
-	while (p = strstr(p, "href=\"")){
+	while ((p = strstr(p, "href=\""))){
 		++cnt;
 		p += 6;
 	}
@@ -48,7 +48,7 @@ int html_parser(char *data, char ***object_list){
 
 	p = tmp;
 	cnt = 0;
-	while (p = strstr(p, "href=\"")){
+	while ((p = strstr(p, "href=\""))){
 		p += 6;
 		(*object_list)[cnt++] = copyStr(p);
 		puts((*object_list)[cnt - 1]);

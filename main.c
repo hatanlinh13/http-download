@@ -29,13 +29,13 @@ char *prefix;     /* level 1 file/directory name prefix,
 int
 main(int argc, char **argv)
 {
-	char *host_name       = (char *)malloc(MAX_STR_LEN);
-	char *target_location = (char *)malloc(MAX_STR_LEN);
+	char *host_name;
+	char *target_location;
 	/* current location of the file being downloaded */
-	char *curr_dir        = (char *)malloc(MAX_STR_LEN);
-	prefix                = (char *)malloc(MAX_STR_LEN);
+	char *curr_dir = (char *)malloc(MAX_STR_LEN);
+	prefix         = (char *)malloc(MAX_STR_LEN);
 
-	if (cmd_parser(argc, argv, host_name, target_location) == 0) {
+	if (cmd_parser(argc, argv, &host_name, &target_location) == 0) {
 		fprintf(stderr, "Invalid command line argument!\n");
 		fprintf(stdout, "Usage: exe <http version> <target URL>\n");
 		exit(EXIT_FAILURE);
