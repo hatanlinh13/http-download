@@ -22,6 +22,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 
+#define BUF_SIZE        4096
 #define MAX_HTTP_HEADER 4096
 const char *HTTP_GET = "GET %s HTTP/%s\r\nHost: %s\r\n\r\n";
 
@@ -33,12 +34,17 @@ char *create_message(char *host_name, char *target_location);
 char *create_name(char *target_location);
 /* get data through socket, return 1 -> html, 2 -> regular file, 0 -> error */
 int   get_data(char *http_message, char **data, char *host_name);
-/* get all HTTP respond header */
-int   get_http_header(char *hdr);
 /* get data using HTTP 1.0 */
 int   get_http10_data(char *http_message, char **data, char *host_name);
 /* get data using HTTP 1.1 */
 int   get_http11_data(char *http_message, char **data, char *host_name);
+/* get all HTTP respond header */
+int   get_http_header(char *hdr);
+/* get data until \r\n
+ * used in HTTP 1.1 with chunked encoding
+ * to get one line of data at a time */
+char *get_line_data();
+
 
 void get_http_object(char *host_name,
                      char *target_location,
@@ -50,13 +56,15 @@ void get_http_object(char *host_name,
 	char *data;
 	char **object_list;
 	int rd;
+	fprintf(stdout, "Getting target %s...\n", target_location);
 	if ((rd = get_data(http_message, &data, host_name)) == 1) { /* html */
+		fprintf(stdout, "----Successfully received target.\n");
 		if (html_parser(data, &object_list) == 1) { /* directory listing */
 			char *dir_name = create_name(target_location);
 
 			if (create_dir(dir_name, curr_dir) == 0) {
-				fprintf(stderr, "Cannot create directory %s. ", dir_name);
-				fprintf(stderr, "Skipping this directory.\n");
+				fprintf(stdout, "----Cannot create directory %s. ", dir_name);
+				fprintf(stdout, "Skipping this directory.\n");
 				free(http_message);
 				free(data);
 				free_objects(object_list);
@@ -64,6 +72,7 @@ void get_http_object(char *host_name,
 				return;
 			}
 			prefix[0] = '\0';
+			fprintf(stdout, "----Created directory: %s.\n", dir_name);
 
 			int i = 0;
 			char *obj = object_list[i];
@@ -101,8 +110,8 @@ void get_http_object(char *host_name,
 			char *file_name = create_name(target_location);
 
 			if (save_file(file_name, curr_dir, data) == 0) {
-				fprintf(stderr, "Cannot save %s to disk. ", file_name);
-				fprintf(stderr, "Skipping this file.\n");
+				fprintf(stdout, "----Cannot save %s to disk. ", file_name);
+				fprintf(stdout, "Skipping this file.\n");
 				free(http_message);
 				free(data);
 				free(file_name);
@@ -110,6 +119,7 @@ void get_http_object(char *host_name,
 			}
 			prefix[0]  = '\0';
 			file_count += 1;
+			fprintf(stdout, "----Saved file to disk: %s.\n", file_name);
 
 			free(file_name);
 		}
@@ -118,8 +128,8 @@ void get_http_object(char *host_name,
 		char *file_name = create_name(target_location);
 
 		if (save_file(file_name, curr_dir, data) == 0) {
-			fprintf(stderr, "Cannot save %s to disk. ", file_name);
-			fprintf(stderr, "Skipping this file.\n");
+			fprintf(stdout, "----Cannot save %s to disk. ", file_name);
+			fprintf(stdout, "Skipping this file.\n");
 			free(http_message);
 			free(data);
 			free(file_name);
@@ -127,17 +137,19 @@ void get_http_object(char *host_name,
 		}
 		prefix[0]  = '\0';
 		file_count += 1;
+		fprintf(stdout, "----Saved file to disk: %s.\n", file_name);
 
 		free(file_name);
 	}
 	else { /* Error getting data */
-		fprintf(stderr, "Cannot get data for target: %s. ", target_location);
-		fprintf(stderr, "Skipping!\n");
+		fprintf(stdout, "----Cannot get data of target: %s. ", target_location);
+		fprintf(stdout, "Skipping!\n");
 	}
 
 	free(http_message);
 	free(data);
 }
+
 
 void free_objects(char **object_list)
 {
@@ -309,21 +321,93 @@ int get_http11_data(char *http_message, char **data, char *host_name)
 	else
 		file_type = 2; /* other file type */
 	char *content_len = strstr(respond_hdr, "Content-Length:");
-	content_len += 16; /* shift pointer points to value */
-	sscanf(content_len, "%d", &num_bytes);
+	int chunked;
+	if (content_len == NULL) { /* chunked encoding */
+		chunked = 1;
+	}
+	else { /* not chunked */
+		chunked = 0;
+		content_len += 16; /* shift pointer points to value */
+		sscanf(content_len, "%d", &num_bytes);
+	}
 
-	/* get body */
-	*data = (char *)malloc(num_bytes);
-	int total_read = 0;
-	int num_read;
-	while ((num_read = recv(sockfd, *data, num_bytes, 0)) != -1)
-		total_read += num_read;
-	if (total_read != num_bytes) {
-		fprintf(stderr, "Cannot get HTTP respond body.\n");
-		tear_down_socket();
-		return 0;
+	/* process respond body */
+	if (chunked) {
+		int chunk_size;
+		char *chunk_indicator;
+		char *chunk_buffer;
+
+		*data = (char *)malloc(1);
+		int data_size = 0;
+		while (true) {
+			chunk_indicator = get_line_data();
+			if (chunk_indicator == NULL) {
+				fprintf(stderr, "Cannot get chunk.\n");
+				tear_down_socket();
+				return 0;
+			}
+			sscanf(chunk_indicator, "%x", &chunk_size);
+
+			if (chunk_size > 0) {
+				chunk_buffer = get_line_data();
+				if (chunk_buffer == NULL) {
+					fprintf(stderr, "Cannot get chunk buffer.\n");
+					free(chunk_indicator);
+					tear_down_socket();
+					return 0;
+				}
+
+				*data = (char *)realloc(*data, data_size + chunk_size);
+				strncpy(*data + data_size, chunk_buffer, chunk_size);
+				data_size += chunk_size;
+				free(chunk_buffer);
+			}
+			else { /* end of respond */
+				free(chunk_indicator);
+				tear_down_socket();
+				return file_type;
+			}
+		}
+	}
+	else { /* not chunked */
+		/* get body */
+		*data = (char *)malloc(num_bytes);
+		int total_read = 0;
+		int num_read;
+		while ((num_read = recv(sockfd, *data, num_bytes, 0)) != -1)
+			total_read += num_read;
+		if (total_read != num_bytes) {
+			fprintf(stderr, "Cannot get HTTP respond body.\n");
+			tear_down_socket();
+			return 0;
+		}
 	}
 
 	tear_down_socket();
 	return file_type;
+}
+
+char *get_line_data()
+{
+	int allocated = 0;
+	char *line = (char *)malloc(BUF_SIZE);
+	allocated += BUF_SIZE;
+
+	char c1 = '\0';
+	char c2 = '\0';
+	int num_read = 0;
+	while (true) {
+		if (num_read == allocated) /* buffer full */
+			line = (char *)realloc(line, allocated + BUF_SIZE);
+
+		if (recv(sockfd, line + num_read, 1, 0) == -1)
+			return NULL;
+
+		c1 = c2;
+		c2 = line[num_read];
+		num_read += 1;
+
+		if (c1 == '\r' && c2 == '\n')
+			return line;
+	}
 }
