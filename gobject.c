@@ -24,12 +24,11 @@ const char *HTTP_GET = "GET %s HTTP/%s\r\nHost: %s\r\n\r\n";
 /* construct HTTP GET message */
 char *create_message(char *host_name, char *target_location);
 /* get data through socket, return 1 -> html, 2 -> regular file, 0 -> error */
-int   get_data(int sockfd, char *http_message, char **data);
+int   get_data(char *http_message, char **data);
 /* extract file name from location */
 char *create_name(char *target_location);
 
 void get_http_object(
-		int   sockfd,
 		char *host_name,
 		char *target_location,
 		char *curr_dir)
@@ -39,7 +38,7 @@ void get_http_object(
 
 	char *data;
 	char **object_list;
-	if (get_data(sockfd, http_message, &data) == 1) { /* html */
+	if (get_data(http_message, &data) == 1) { /* html */
 		if (html_parser(data, &object_list) == 1) { /* directory listing */
 			char *dir_name = create_name(target_location);
 
@@ -67,7 +66,7 @@ void get_http_object(
 				strncat(next_dir, dir_name, strlen(dir_name));
 				strncat(next_dir, "/", 1);
 
-				get_http_object(sockfd, host_name, new_target, next_dir);
+				get_http_object(host_name, new_target, next_dir);
 
 				free(new_target);
 				free(next_dir);
@@ -120,4 +119,14 @@ char *create_message(char *host_name, char *target_location)
 		strncpy(version, "1.1", 4);
 	sprintf(message, HTTP_GET, target_location, version, host_name);
 	return message;
+}
+
+int get_data(char *http_message, char **data)
+{
+	http_message = *data;
+	if (10 == http_version) { /* HTTP/1.0 */
+	}
+	else { /* HTTP/1.1 */
+	}
+	return 0;
 }

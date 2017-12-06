@@ -47,7 +47,7 @@ main(int argc, char **argv)
 
 	strncpy(curr_dir, "./", 3);
 	strncpy(prefix, "1512284_1512387_1512491_", 25);
-	get_http_object(sockfd, host_name, target_location, curr_dir);
+	get_http_object(host_name, target_location, curr_dir);
 	fprintf(stdout, "Successfully downloaded all files and directories.\n");
 
 	if ((http_version == 11) && (tear_down_socket(sockfd) == -1)) { 
