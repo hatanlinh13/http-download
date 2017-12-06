@@ -18,7 +18,7 @@ CFLAGS = $(INCOPT)
 LFLAGS =
 
 cmd.o: cmd.c $(INCDIR)cmd.h $(INCDIR)defs.h
-	$(CC) $(CFLAGS) -c cmd.c -o -o $(BINDIR)cmd.o
+	$(CC) $(CFLAGS) -c cmd.c -o $(BINDIR)cmd.o
 
 htmlp.o: htmlp.c $(INCDIR)htmlp.h $(INCDIR)defs.h
 	$(CC) $(CFLAGS) -c htmlp.c -o $(BINDIR)htmlp.o
