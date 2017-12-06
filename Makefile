@@ -17,18 +17,7 @@ INCOPT = -I./include
 CFLAGS = $(INCOPT)
 LFLAGS =
 
-all: main.o \
-	cmd.o \
-	gobject.o sockmngt.o htmlp.o filemngt.o
-	mkdir bin
-	$(LD) $(LFLAGS) \
-		$(BINDIR)main.o $(BINDIR)cmd.o \
-		$(BINDIR)gobject.o $(BINDIR)sockmngt.o \
-		$(BINDIR)htmlp.o $(BINDIR)filemngt.o \
-		-o 1512284_1512387_1512491
-
-cmd.o: cmd.c $(INCDIR)cmd.h $(INCDIR)defs.h \
-	$(INCDIR)httpv.h $(INCDIR)ghost.h $(INCDIR)gtarget.h
+cmd.o: cmd.c $(INCDIR)cmd.h $(INCDIR)defs.h
 	$(CC) $(CFLAGS) -c cmd.c -o -o $(BINDIR)cmd.o
 
 htmlp.o: htmlp.c $(INCDIR)htmlp.h $(INCDIR)defs.h
@@ -46,6 +35,19 @@ sockmngt.o: sockmngt.c $(INCDIR)sockmngt.h $(INCDIR)defs.h
 
 main.o: main.c $(INCDIR)defs.h $(INCDIR)cmd.h $(INCDIR)gobject.h $(INCDIR)sockmngt.h
 	$(CC) $(CFLAGS) -c main.c -o $(BINDIR)main.o
+
+.PHONY: all clean makebindir
+all: makebindir main.o \
+	cmd.o \
+	gobject.o sockmngt.o htmlp.o filemngt.o
+	$(LD) $(LFLAGS) \
+		$(BINDIR)main.o $(BINDIR)cmd.o \
+		$(BINDIR)gobject.o $(BINDIR)sockmngt.o \
+		$(BINDIR)htmlp.o $(BINDIR)filemngt.o \
+		-o 1512284_1512387_1512491
+
+makebindir:
+	mkdir -p bin
 
 clean:
 	rm -r ./bin 1512284_1512387_1512491
