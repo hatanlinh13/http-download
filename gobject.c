@@ -16,6 +16,8 @@
 #include "sockmngt.h"
 #include "defs.h"
 
+#include <sys/types.h>
+#include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -57,7 +59,7 @@ void get_http_object(char *host_name,
 	char *data = NULL;
 	char **object_list = NULL;
 	int rd;
-	fprintf(stdout, "Getting target %s...\n", target_location);
+	fprintf(stdout, "Getting target %s\n", target_location);
 	if ((rd = get_data(http_message, &data, host_name, &len_read)) == 1) { /* html */
 		fprintf(stdout, "----Successfully received target.\n");
 		if (html_parser(data, &object_list) == 1) { /* directory listing */
@@ -73,7 +75,7 @@ void get_http_object(char *host_name,
 				return;
 			}
 			prefix[0] = '\0';
-			fprintf(stdout, "----Created directory: %s.\n", dir_name);
+			fprintf(stdout, "----Created directory: %s\n", dir_name);
 
 			int i = 0;
 			char *obj = object_list[i];
@@ -119,7 +121,7 @@ void get_http_object(char *host_name,
 			}
 			prefix[0]  = '\0';
 			file_count += 1;
-			fprintf(stdout, "----Saved file to disk: %s.\n", file_name);
+			fprintf(stdout, "----Saved file to disk: %s\n", file_name);
 
 			free(file_name);
 		}
@@ -137,7 +139,7 @@ void get_http_object(char *host_name,
 		}
 		prefix[0]  = '\0';
 		file_count += 1;
-		fprintf(stdout, "----Saved file to disk: %s.\n", file_name);
+		fprintf(stdout, "----Saved file to disk: %s\n", file_name);
 
 		free(file_name);
 	}
@@ -184,7 +186,22 @@ char *create_name(char *target_location)
 	anchor += 1;
 	strncpy(name, prefix, strlen(prefix) + 1);
 	strncat(name, anchor, strlen(anchor));
-	return name;
+
+	/* replace all %20 with space */
+	char *nameold = name;
+	char *namesp = (char *)malloc(MAX_STR_LEN);
+	namesp[0] = '\0'; /* empty string */
+	char *sp;
+	while ((sp = strstr(name, "%20")) != NULL) {
+		sp[0] = '\0';
+		strcat(namesp, name);
+		strcat(namesp, " ");
+		name = sp + 3;
+	}
+	strcat(namesp, name);
+
+	free(nameold);
+	return namesp;
 }
 
 char *create_message(char *host_name, char *target_location)
@@ -283,8 +300,9 @@ int get_http10_data(char *http_message, char **data, char *host_name, int *len_r
 		*data = (char *)malloc(num_bytes);
 		int total_read = 0;
 		int num_read;
-		while ((num_read = recv(sockfd, *data, num_bytes, 0)) > 0)
+		while ((num_read = recv(sockfd, *data + total_read, num_bytes - total_read, 0)) > 0) {
 			total_read += num_read;
+		}
 		if (total_read != num_bytes) {
 			fprintf(stderr, "~~~~Cannot get HTTP respond body.\n");
 			tear_down_socket();
@@ -407,8 +425,9 @@ int get_http11_data(char *http_message, char **data, char *host_name, int *len_r
 		*data = (char *)malloc(num_bytes);
 		int total_read = 0;
 		int num_read;
-		while ((num_read = recv(sockfd, *data, num_bytes, 0)) > 0)
+		while ((num_read = recv(sockfd, *data + total_read, num_bytes - total_read, 0)) > 0) {
 			total_read += num_read;
+		}
 		if (total_read != num_bytes) {
 			fprintf(stderr, "~~~~Cannot get HTTP respond body.\n");
 			tear_down_socket();
