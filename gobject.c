@@ -42,10 +42,6 @@ int   get_http10_data(char *http_message, char **data, char *host_name, int *len
 int   get_http11_data(char *http_message, char **data, char *host_name, int *len_read);
 /* get all HTTP respond header */
 int   get_http_header(char *hdr);
-/* get data until \r\n
- * used in HTTP 1.1 with chunked encoding
- * to get one line of data at a time */
-char *get_line_data();
 
 
 void get_http_object(char *host_name,
@@ -388,40 +384,56 @@ int get_http11_data(char *http_message, char **data, char *host_name, int *len_r
 
 	/* process respond body */
 	if (chunked) {
-		int chunk_size;
-		char *chunk_indicator;
-		char *chunk_buffer;
+		char *buffer = (char *)malloc(BUF_SIZE);
+		int allocated = BUF_SIZE;
 
-		*data = (char *)malloc(1);
-		int data_size = 0;
+		*data = (char *)malloc(BUF_SIZE);
+		int d_allocated = BUF_SIZE;
+
+		int total_read = 0;
+		int data_read  = 0;
+		int bytes_to_read = -1;
+		char *slide = buffer;
 		while (1) {
-			chunk_indicator = get_line_data();
-			if (chunk_indicator == NULL) {
-				fprintf(stderr, "~~~~Cannot get chunk.\n");
+			/* buffer full, need more space */
+			if (allocated - total_read < 100000) {
+				buffer = (char *)realloc(buffer, allocated + BUF_SIZE);
+				allocated += BUF_SIZE;
+			}
+
+			/* get new data from socket */
+			int read_size = 100000;
+			if (read_size > allocated - total_read)
+				read_size = allocated - total_read;
+			int rd = recv(sockfd, buffer + total_read, read_size, 0);
+			if (rd <= 0) {
+				fprintf(stderr, "~~~~Connection lost.\n");
 				tear_down_socket();
 				return 0;
 			}
-			sscanf(chunk_indicator, "%x", &chunk_size);
 
-			if (chunk_size > 0) {
-				chunk_buffer = get_line_data();
-				if (chunk_buffer == NULL) {
-					fprintf(stderr, "~~~~Cannot get chunk buffer.\n");
-					free(chunk_indicator);
-					tear_down_socket();
-					return 0;
+			/* process received data */
+			char *line_delim;
+			while ((line_delim = strstr(slide, "\r\n")) != NULL) {
+				if (bytes_to_read < 0) { /* chunk size line */
+					sscanf(slide, "%x", &bytes_to_read);
 				}
-
-				*data = (char *)realloc(*data, data_size + chunk_size);
-				strncpy(*data + data_size, chunk_buffer, chunk_size);
-				data_size += chunk_size;
-				free(chunk_buffer);
-			}
-			else { /* end of respond */
-				free(chunk_indicator);
-				tear_down_socket();
-				*len_read = data_size;
-				return file_type;
+				else if (bytes_to_read > 0) { /* data line */
+					int new_size = data_read + bytes_to_read;
+					if (new_size > d_allocated) { /* data need more space */
+						int multifier = (new_size - d_allocated) / BUF_SIZE;
+						*data = (char *)realloc(*data, (multifier + 1) * BUF_SIZE);
+					}
+					strncpy(*data + data_read, slide, bytes_to_read);
+					bytes_to_read = -1;
+				}
+				else { /* end of message */
+					*len_read = data_read;
+					free(buffer);
+					tear_down_socket();
+					return file_type;
+				}
+				slide = line_delim + 2; /* to next line */
 			}
 		}
 	}
@@ -443,30 +455,4 @@ int get_http11_data(char *http_message, char **data, char *host_name, int *len_r
 
 	tear_down_socket();
 	return file_type;
-}
-
-char *get_line_data()
-{
-	int allocated = BUF_SIZE;
-	char *line = (char *)malloc(BUF_SIZE);
-
-	char c1 = '\0';
-	char c2 = '\0';
-	int num_read = 0;
-	while (1) {
-		if (num_read == allocated) { /* buffer full */
-			line = (char *)realloc(line, allocated + BUF_SIZE);
-			allocated += BUF_SIZE;
-		}
-
-		if (recv(sockfd, line + num_read, 1, 0) == -1)
-			return NULL;
-
-		c1 = c2;
-		c2 = line[num_read];
-		num_read += 1;
-
-		if (c1 == '\r' && c2 == '\n')
-			return line;
-	}
 }

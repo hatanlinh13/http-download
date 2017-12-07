@@ -13,8 +13,8 @@ CC     = gcc
 INCDIR = ./include/
 BINDIR = ./bin/
 INCOPT = -I./include
-CFLAGS = $(INCOPT) -g
-LFLAGS = -g
+CFLAGS = $(INCOPT)
+LFLAGS =
 
 .PHONY: all clean makebindir
 all: makebindir main.o \
