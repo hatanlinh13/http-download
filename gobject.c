@@ -228,31 +228,6 @@ int get_data(char *http_message, char **data, char *host_name, int *len_read)
 
 int get_http_header(char *hdr)
 {
-	/*
-	char c1 = '\0';
-	char c2 = '\0';
-	char c3 = '\0';
-	char c4 = '\0';
-	int i;
-
-	i = 0;
-	while (recv(sockfd, hdr + i, 1, 0) == 1) {
-		c1 = c2;
-		c2 = c3;
-		c3 = c4;
-		c4 = hdr[i];
-
-		if (c1 == '\r' &&
-		    c2 == '\n' &&
-		    c3 == '\r' &&
-		    c4 == '\n')
-			return 1;
-
-		i++;
-	}
-
-	return 0;
-	*/
 	char *buffer = (char *)malloc(BUF_SIZE);
 	char *end_of_hdr;
 	int predicted_len = 1024;
