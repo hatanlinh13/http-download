@@ -29,11 +29,21 @@ int create_dir(const char *dir_name, const char *curr_dir){
     strcpy(tmp+cdl, dir_name);
     tmp[cdl+dl] = '\0';
 
+/*
     if (stat(tmp, &st) == -1) {
         mkdir(tmp, 0755);
 		return 1;
     }
 	return 1;
+*/
+	if (stat(tmp, &st) == -1) {
+        if(mkdir(tmp, 0755) == 0)
+                return 1;
+        return 0;
+    }
+    else if ((stat(tmp, &st) == 0) && (((st.st_mode) & S_IFMT) == S_IFDIR))
+        return 1;
+    return 0;
 }
 
 struct stat f;// = {0};

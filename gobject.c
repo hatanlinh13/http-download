@@ -185,8 +185,8 @@ char *create_name(char *target_location)
 	/* start copy from the next character */
 	strncpy(name, prefix, strlen(prefix) + 1);
 	if (anchor) {
-		strncat(name, anchor, strlen(anchor));
 		anchor += 1;
+		strncat(name, anchor, strlen(anchor));
 	}
 	else {
 		strncat(name, "noname", 6);
