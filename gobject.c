@@ -123,6 +123,7 @@ void get_http_object(char *host_name,
 		}
 	}
 	else if (rd == 2) { /* normal file */
+		fprintf(stdout, "----Successfully received target.\n");
 		char *file_name = create_name(target_location);
 
 		if (save_file(file_name, curr_dir, data, len_read) == 0) {
@@ -227,6 +228,7 @@ int get_data(char *http_message, char **data, char *host_name, int *len_read)
 
 int get_http_header(char *hdr)
 {
+	/*
 	char c1 = '\0';
 	char c2 = '\0';
 	char c3 = '\0';
@@ -250,6 +252,24 @@ int get_http_header(char *hdr)
 	}
 
 	return 0;
+	*/
+	char *buffer = (char *)malloc(BUF_SIZE);
+	char *end_of_hdr;
+	int predicted_len = 1024;
+	while (1) {
+		int rd = recv(sockfd, buffer, predicted_len, MSG_PEEK);
+		if (rd <= 0)
+			return 0;
+		if ((end_of_hdr = strstr(buffer, "\r\n\r\n")) != NULL)
+			break;
+		predicted_len += 1024;
+		if (predicted_len > BUF_SIZE)
+			predicted_len = BUF_SIZE;
+		usleep(50);
+	}
+	recv(sockfd, hdr, end_of_hdr - buffer + 4, 0);
+	free(buffer);
+	return 1;
 }
 
 int get_http10_data(char *http_message, char **data, char *host_name, int *len_read)
@@ -301,8 +321,11 @@ int get_http10_data(char *http_message, char **data, char *host_name, int *len_r
 		*data = (char *)malloc(num_bytes);
 		int total_read = 0;
 		int num_read;
-		while ((num_read = recv(sockfd, *data + total_read, num_bytes - total_read, 0)) > 0) {
-			total_read += num_read;
+		while ((num_read = recv(sockfd, *data + total_read, num_bytes - total_read, 0)) != 0) {
+			if (num_read > 0)
+				total_read += num_read;
+			if (total_read == num_bytes)
+				break;
 		}
 		if (total_read != num_bytes) {
 			fprintf(stderr, "~~~~Cannot get HTTP respond body.\n");
@@ -322,8 +345,9 @@ int get_http10_data(char *http_message, char **data, char *host_name, int *len_r
 			}
 
 			int rd = recv(sockfd, *data + num_read, 100000, 0);
-			num_read += rd;
-			if (rd <= 0)
+			if (rd > 0)
+				num_read += rd;
+			if (rd == 0)
 				break;
 		}
 		*len_read = num_read;
@@ -384,6 +408,7 @@ int get_http11_data(char *http_message, char **data, char *host_name, int *len_r
 
 	/* process respond body */
 	if (chunked) {
+		sleep(1);
 		char *buffer = (char *)malloc(BUF_SIZE);
 		int allocated = BUF_SIZE;
 
@@ -425,6 +450,7 @@ int get_http11_data(char *http_message, char **data, char *host_name, int *len_r
 						*data = (char *)realloc(*data, (multifier + 1) * BUF_SIZE);
 					}
 					strncpy(*data + data_read, slide, bytes_to_read);
+					data_read += bytes_to_read;
 					bytes_to_read = -1;
 				}
 				else { /* end of message */
@@ -442,8 +468,11 @@ int get_http11_data(char *http_message, char **data, char *host_name, int *len_r
 		*data = (char *)malloc(num_bytes);
 		int total_read = 0;
 		int num_read;
-		while ((num_read = recv(sockfd, *data + total_read, num_bytes - total_read, 0)) > 0) {
-			total_read += num_read;
+		while ((num_read = recv(sockfd, *data + total_read, num_bytes - total_read, 0)) != 0) {
+			if (num_read > 0)
+				total_read += num_read;
+			if (total_read == num_bytes)
+				break;
 		}
 		if (total_read != num_bytes) {
 			fprintf(stderr, "~~~~Cannot get HTTP respond body.\n");
