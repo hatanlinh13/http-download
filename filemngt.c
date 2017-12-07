@@ -33,7 +33,7 @@ int create_dir(const char *dir_name, const char *curr_dir){
         mkdir(tmp, 0755);
 		return 1;
     }
-	return 0;
+	return 1;
 }
 
 struct stat f;// = {0};
