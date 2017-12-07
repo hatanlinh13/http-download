@@ -183,9 +183,14 @@ char *create_name(char *target_location)
 	}
 
 	/* start copy from the next character */
-	anchor += 1;
 	strncpy(name, prefix, strlen(prefix) + 1);
-	strncat(name, anchor, strlen(anchor));
+	if (anchor) {
+		strncat(name, anchor, strlen(anchor));
+		anchor += 1;
+	}
+	else {
+		strncat(name, "noname", 6);
+	}
 
 	/* replace all %20 with space */
 	char *nameold = name;
